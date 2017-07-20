@@ -90,29 +90,28 @@ class Login extends Component {
 
   _confirm = async () => {
     const { name, email, password } = this.state
+    let result;
+    
     if (this.state.login) {
-      const result = await this.props.signinUserMutation({
+      result = await this.props.signinUserMutation({
         variables: {
           email,
           password
         }
-      })
-      const id = result.data.signinUser.user.id
-      const token = result.data.signinUser.token
-      this._saveUserData(id, token)
+      });
     } else {
-      const result = await this.props.createUserMutation({
+      result = await this.props.createUserMutation({
         variables: {
           name,
           email,
           password
         }
-      })
-      const id = result.data.signinUser.user.id
-      const token = result.data.signinUser.token
-      this._saveUserData(id, token)
+      });
     }
-    this.props.history.push(`/`)
+    const id = result.data.signinUser.user.id;
+    const token = result.data.signinUser.token;
+    this._saveUserData(id, token);
+    this.props.history.push(`/`);
   }
 
   _saveUserData = (id, token) => {
