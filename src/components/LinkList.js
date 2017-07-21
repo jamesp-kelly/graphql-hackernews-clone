@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { graphql, gql } from 'react-apollo';
 import Link from './Link';
 
-const ALL_LINKS_QUERY = gql`
+export const ALL_LINKS_QUERY = gql`
   query AllLinksQuery {
     allLinks {
       id
@@ -55,7 +55,7 @@ class LinkList extends Component {
     const data = store.readQuery({ query: ALL_LINKS_QUERY });
     const votedLink = data.allLinks.find(link => link.id === linkId);
     votedLink.votes = createVote.link.votes;
-    
+
     store.writeQuery({ query: ALL_LINKS_QUERY, data });
   }
 }
