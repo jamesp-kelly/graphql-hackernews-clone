@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {BrowserRouter} from 'react-router-dom';
+import { addGraphQLSubscriptions, SubscriptionClient } from 'subscriptions-transport-ws';
 import './styles/index.css';
 import App from './components/App';
 import registerServiceWorker from './registerServiceWorker';
@@ -17,6 +18,18 @@ const networkInterface = createNetworkInterface({
   uri: 'https://api.graph.cool/simple/v1/cj5blhftlrfig0133mtmoidd3'
 });
 
+const wsClient = new SubscriptionClient('wss://subscriptions.us-west-2.graph.cool/v1/cj5blhftlrfig0133mtmoidd3', {
+  reconnect: true,
+  connectionParams: {
+    authToken: localStorage.getItem(GC_AUTH_TOKEN),
+  }
+});
+
+const networkInterfaceWithSubscriptions = addGraphQLSubscriptions(
+  networkInterface,
+  wsClient
+);
+
 networkInterface.use([{
   applyMiddleware(req, next) {
     if (!req.options.headers) {
@@ -26,10 +39,10 @@ networkInterface.use([{
     req.options.headers.authorization = token ? `Bearer ${token}` : null;
     next();
   }
-}])
+}]);
 
 const client = new ApolloClient({
-  networkInterface
+  networkInterface: networkInterfaceWithSubscriptions
 });
 
 ReactDOM.render(

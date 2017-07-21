@@ -24,6 +24,11 @@ export const ALL_LINKS_QUERY = gql`
 `;
 
 class LinkList extends Component {
+
+  componentDidMount() {
+    this._subscribeToNewLinks();
+  }
+
   render() {
 
     if (this.props.allLinksQuery && this.props.allLinksQuery.loading) {
@@ -57,7 +62,49 @@ class LinkList extends Component {
     votedLink.votes = createVote.link.votes;
 
     store.writeQuery({ query: ALL_LINKS_QUERY, data });
+  };
+
+  _subscribeToNewLinks = () => {
+    this.props.allLinksQuery.subscribeToMore({
+      document: gql`
+        subscription {
+          Link(filter: {
+            mutation_in: [CREATED]
+          }) {
+            node {
+              id
+              url
+              description
+              createdAt
+              postedBy {
+                id
+                name
+              }
+              votes {
+                id
+                user {
+                  id
+                }
+              }
+            }
+          }
+        }
+      `,
+      updateQuery: (previous, { subscriptionData }) => {
+        debugger;
+        const newAllLinks = [
+          subscriptionData.data.Link.node,
+          ...previous.allLinks
+        ]
+        const result = {
+          ...previous,
+          allLinks: newAllLinks
+        }
+        return result
+      }
+    })
   }
+
 }
 
 export default graphql(ALL_LINKS_QUERY, { name: 'allLinksQuery'})(LinkList);
