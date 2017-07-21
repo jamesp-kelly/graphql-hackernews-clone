@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { graphql, gql } from 'react-apollo';
 import Link from './Link';
 
-
 const ALL_LINKS_QUERY = gql`
   query AllLinksQuery {
     allLinks {
@@ -10,9 +9,19 @@ const ALL_LINKS_QUERY = gql`
       createdAt
       url
       description
+      postedBy {
+        id
+        name
+      }
+      votes {
+        id
+        user {
+          id
+        }
+      }
     }
   }
-`
+`;
 
 class LinkList extends Component {
   render() {
@@ -30,11 +39,24 @@ class LinkList extends Component {
 
     return (
       <div>
-        {linksToRender.map(link => (
-          <Link key={link.id} link={link}/>
+        {linksToRender.map((link, index) => (
+          <Link 
+            key={link.id} 
+            index={index} 
+            link={link}
+            updateStoreAfterVote={this._updateCacheAfterVote}
+          />
         ))}
       </div>
     );
+  }
+
+  _updateCacheAfterVote = (store, createVote, linkId) => {
+    const data = store.readQuery({ query: ALL_LINKS_QUERY });
+    const votedLink = data.allLinks.find(link => link.id === linkId);
+    votedLink.votes = createVote.link.votes;
+    
+    store.writeQuery({ query: ALL_LINKS_QUERY, data });
   }
 }
 
