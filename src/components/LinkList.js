@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { graphql, gql } from 'react-apollo';
 import Link from './Link';
-import { LINKS_PER_PAGE } from '../constants';
+import { GC_USER_ID, LINKS_PER_PAGE } from '../constants';
 
 //variables passed when wrapping component
 export const ALL_LINKS_QUERY = gql` 
@@ -22,6 +22,9 @@ export const ALL_LINKS_QUERY = gql`
         }
       }
     }
+    _allLinksMeta {
+      count
+    }
   }
 `;
 
@@ -30,6 +33,32 @@ class LinkList extends Component {
   componentDidMount() {
     this._subscribeToNewLinks();
     this._subscribeToNewVotes();
+  }
+
+  _getLinksToRender(isNewPage) {
+    if (isNewPage) {
+      return this.props.allLinksQuery.allLinks;
+    }
+
+    const rankedLinks = this.props.allLinksQuery.allLinks.slice();
+    rankedLinks.sort((a, b) => b.votes.length - a.votes.length);
+    return rankedLinks;
+  }
+
+  _nextPage() {
+    const page = parseInt(this.props.match.params.page, 10);
+    if (page <= this.props.allLinksQuery._allLinksMeta.count / LINKS_PER_PAGE) {
+      const nextPage = page + 1;
+      this.props.history.push(`/new/${nextPage}`);
+    }
+  }
+
+  _prevPage() {
+    const page = parseInt(this.props.match.params.page, 10);
+    if (page > 1) {
+      const nextPage = page - 1;
+      this.props.history.push(`/new/${nextPage}`);
+    }
   }
 
   render() {
@@ -42,25 +71,39 @@ class LinkList extends Component {
       return <div>Error</div>
     }
 
-    const linksToRender = this.props.allLinksQuery.allLinks;
-
+    const isNewPage = this.props.location.pathname.includes('new');
+    const linksToRender = this._getLinksToRender(isNewPage);
+    const userId = localStorage.getItem(GC_USER_ID);
 
     return (
       <div>
-        {linksToRender.map((link, index) => (
-          <Link 
-            key={link.id} 
-            index={index} 
-            link={link}
-            updateStoreAfterVote={this._updateCacheAfterVote}
-          />
-        ))}
+        <div>
+          {linksToRender.map((link, index) => (
+            <Link 
+              key={link.id} 
+              index={index} 
+              link={link}
+              updateStoreAfterVote={this._updateCacheAfterVote}
+            />
+          ))}
+        </div>
+        <div>
+          <button onClick={() => this._prevPage()}>Previous</button>
+          <button onClick={() => this._nextPage()}>Next</button>
+        </div>
       </div>
     );
   }
 
   _updateCacheAfterVote = (store, createVote, linkId) => {
-    const data = store.readQuery({ query: ALL_LINKS_QUERY });
+
+    const isNewPage = this.props.location.pathname.includes('new');
+    const page = parseInt(this.props.match.params.page, 10);
+    const skip = isNewPage ? (page -1) * LINKS_PER_PAGE : 0;
+    const first = isNewPage ? LINKS_PER_PAGE : 100;
+    const orderBy = isNewPage ? 'createdAt_DESC' : null;
+    const data = store.readQuery({ query: ALL_LINKS_QUERY, variables: { first, skip, orderBy } });
+    
     const votedLink = data.allLinks.find(link => link.id === linkId);
     votedLink.votes = createVote.link.votes;
 
