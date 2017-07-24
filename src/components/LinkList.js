@@ -75,13 +75,17 @@ class LinkList extends Component {
     const linksToRender = this._getLinksToRender(isNewPage);
     const userId = localStorage.getItem(GC_USER_ID);
 
+    const page = isNewPage ? parseInt(this.props.match.params.page, 10)
+      : 1;
+
     return (
       <div>
         <div>
           {linksToRender.map((link, index) => (
             <Link 
               key={link.id} 
-              index={index} 
+              index={index}
+              page={page}
               link={link}
               updateStoreAfterVote={this._updateCacheAfterVote}
             />

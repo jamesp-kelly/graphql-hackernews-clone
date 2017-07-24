@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { gql, graphql } from 'react-apollo';
 import { timeDifferenceForDate } from '../utils';
-import { GC_USER_ID } from '../constants';
+import { GC_USER_ID, LINKS_PER_PAGE } from '../constants';
 
 const CREATE_VOTE_MUTATION = gql`
   mutation CreateVoteMutation($userId: ID!, $linkId: ID!) {
@@ -48,10 +48,12 @@ class Link extends Component {
 
   render() {
     const userId = localStorage.getItem(GC_USER_ID);
+    const linkIndex = ((this.props.page - 1) * LINKS_PER_PAGE) + this.props.index + 1;
+    
     return (
       <div className="flex mt2 items-start">
         <div className="flex items-center">
-          <span className="gray">{this.props.index + 1}.</span>
+          <span className="gray">{linkIndex}.</span>
           {userId && <div className="mil gray f11" onClick={() => this._voteForLink()}>▲</div>}
         </div>
         <div className="ml1">
